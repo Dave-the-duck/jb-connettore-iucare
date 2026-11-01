@@ -1,0 +1,22 @@
+# Dipendenze
+node_modules/
+
+# Dati sanitari reali: NON devono MAI entrare nel repository
+dati-prova/esami/
+*.dcm
+*.zip
+Referto*.pdf
+Report*.pdf
+DICOMDIR
+
+# Dati di prova con codici fiscali reali: solo in locale (resta l'esempio finto)
+dati-prova/*.json
+!dati-prova/*.esempio.json
+
+# Log e coda (possono contenere codici fiscali): restano solo sul server
+log/*.jsonl
+log/*.json
+
+# File di sistema
+Thumbs.db
+.DS_Store
