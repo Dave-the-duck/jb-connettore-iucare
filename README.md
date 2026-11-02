@@ -96,6 +96,40 @@ alla prossima apertura, a scaricare i file dal portale e metterli nella cartella
 IUCARE del suo Drive (riusa il permesso `drive.file` già attivo). Notifica: email
 ora, push PWA in futuro.
 
+## Riprendere il lavoro da un altro PC
+
+Su GitHub ci sono **due** progetti, da scaricare tutti e due:
+
+```bash
+git clone https://github.com/Dave-the-duck/iucare.git
+git clone https://github.com/Dave-the-duck/jb-connettore-iucare.git
+```
+
+App IUCARE — prendere il ramo giusto e installare le librerie:
+
+```bash
+cd iucare
+git checkout anagrafica-obbligatoria
+npm install
+```
+
+Connettore — installare le librerie:
+
+```bash
+cd jb-connettore-iucare
+npm install
+```
+
+**Due cose NON stanno su GitHub** (apposta) e vanno rimesse a mano:
+
+1. **Il file `iucare/.env.local`** con i segreti, tra cui `IUCARE_CF_SECRET`.
+   Non arriva col `git clone`: va **copiato dal PC principale** (chiavetta USB o
+   gestore di password, mai per email/chat). La stessa `IUCARE_CF_SECRET` servirà
+   poi anche al connettore, altrimenti le impronte del codice fiscale non combaciano.
+2. **I dati di prova col codice fiscale vero** (`dati-prova/*.json`). Sull'altro PC
+   si riparte dal file di esempio finto `dati-prova/profili-finti.esempio.json`
+   (copiarlo in `dati-prova/profili-finti.json` e, se serve, metterci dati veri in locale).
+
 ## Stato
 
 - [x] **Fase 1** — lettura DICOM + referto, pacchetto normalizzato, log. Provata
@@ -107,6 +141,7 @@ ora, push PWA in futuro.
 - [ ] **Fase 3** — l'app legge "esami in attesa", conferma i dati e scarica nel
       Drive del paziente.
 - [ ] **Email vera** — collegare Resend/Brevo (`src/notifica-email.js`).
-- [ ] **Fase 4** — esecuzione automatica più volte al giorno dentro la VM Contabo.
+- [ ] **Fase 4** — esecuzione automatica più volte al giorno su un PC/serverino
+      **fuori** da Contabo (su Contabo si può solo leggere e prelevare, mai scrivere).
 - [ ] Gestione degli **zip** (CD compressi) e di cartelle con più esami.
 ```
