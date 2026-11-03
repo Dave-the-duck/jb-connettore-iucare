@@ -1,6 +1,11 @@
 # Dipendenze
 node_modules/
 
+# Segreti: chiavi di Supabase e dell'impronta. MAI su GitHub (resta l'esempio)
+.env
+.env.*
+!.env.esempio
+
 # Dati sanitari reali: NON devono MAI entrare nel repository
 dati-prova/esami/
 *.dcm

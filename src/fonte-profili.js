@@ -34,24 +34,48 @@ function fonteProfiliFinta(profiliProva, chiaveSegreta) {
 }
 
 /**
- * Fonte REALE (Fase 2): legge la tabella profili di Supabase cercando cf_hash.
- * Usa il service role key (solo lato server, dentro la VM). Non ancora attiva:
- * richiede la colonna cf_hash in Supabase (vedi supabase/esami.sql).
+ * Fonte REALE (Fase 2 "collegata"): cerca nella tabella profili di Supabase il
+ * profilo con quella cf_hash. Usa il SERVICE ROLE key, che scavalca le RLS: va
+ * tenuto solo lato server (nel connettore, mai nell'app né nel repository).
  *
- * @param {object} opzioni - { url, serviceRoleKey } da variabili d'ambiente
+ * Interroga l'API REST di Supabase (PostgREST), così non servono librerie extra:
+ *   GET {url}/rest/v1/profili?cf_hash=eq.<impronta>&select=id,email,nome,cognome,drive_cartella_id&limit=1
+ *
+ * @param {object} opzioni - { url, serviceRoleKey } dalle variabili d'ambiente
  */
-function fonteProfiliSupabase(opzioni) {
-  // Implementazione rimandata alla Fase 2 "collegata": qui resta la forma della
-  // query, così è chiaro cosa farà.
-  //   select id, email, nome, cognome, drive_cartella_id
-  //   from profili where cf_hash = :impronta limit 1
+function fonteProfiliSupabase({ url, serviceRoleKey } = {}) {
+  if (!url || !serviceRoleKey) {
+    throw new Error("fonteProfiliSupabase: mancano SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY (vedi .env).");
+  }
+  const base = url.replace(/\/+$/, "");
   return {
-    async cercaPerImpronta(_imp) {
-      throw new Error(
-        "fonteProfiliSupabase non ancora attiva: serve la colonna cf_hash su Supabase (vedi supabase/esami.sql)."
-      );
+    async cercaPerImpronta(imp) {
+      if (!imp) return null;
+      const endpoint =
+        `${base}/rest/v1/profili?cf_hash=eq.${encodeURIComponent(imp)}` +
+        `&select=id,email,nome,cognome,drive_cartella_id&limit=1`;
+      const risposta = await fetch(endpoint, {
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          Accept: "application/json",
+        },
+      });
+      if (!risposta.ok) {
+        const testo = await risposta.text().catch(() => "");
+        throw new Error(`Supabase ha risposto ${risposta.status}: ${testo.slice(0, 200)}`);
+      }
+      const righe = await risposta.json();
+      const p = Array.isArray(righe) ? righe[0] : null;
+      if (!p) return null;
+      return {
+        id: p.id,
+        email: p.email,
+        nome: p.nome,
+        cognome: p.cognome,
+        driveCartellaId: p.drive_cartella_id,
+      };
     },
-    _opzioni: opzioni,
   };
 }
 

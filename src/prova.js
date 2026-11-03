@@ -10,8 +10,8 @@ const path = require("path");
 const { scansionaCartella } = require("./scansiona-cartella");
 const { costruisciPacchetto } = require("./costruisci-pacchetto");
 const { improntaCodiceFiscale } = require("./impronta");
-const { fonteProfiliFinta } = require("./fonte-profili");
-const { registraInAttesaLocale } = require("./esami-in-attesa");
+const { fonteProfiliFinta, fonteProfiliSupabase } = require("./fonte-profili");
+const { registraInAttesaLocale, registraInAttesaSupabase } = require("./esami-in-attesa");
 const { inviaEmail } = require("./notifica-email");
 const { registra, fileDelGiorno } = require("./log");
 
@@ -24,13 +24,32 @@ const PROFILI = path.join(__dirname, "..", "dati-prova", "profili-finti.json");
 // app IUCARE e connettore. Qui un valore di prova per far girare il test.
 const CHIAVE = process.env.IUCARE_CF_SECRET || "chiave-di-prova-solo-locale";
 
+const URL_SUPABASE = process.env.SUPABASE_URL;
+const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 async function main() {
   const cartella = process.argv[2] || CARTELLA_PROVA;
-  const profiliProva = JSON.parse(fs.readFileSync(PROFILI, "utf8"));
-  const fonte = fonteProfiliFinta(profiliProva, CHIAVE);
+
+  // Fonte dei profili: se nelle variabili d'ambiente ci sono le chiavi di Supabase
+  // si cerca nel DATABASE VERO; altrimenti si usano i profili finti (prova locale).
+  let fonte;
+  let descrizioneFonte;
+  if (URL_SUPABASE && SERVICE_ROLE) {
+    fonte = fonteProfiliSupabase({ url: URL_SUPABASE, serviceRoleKey: SERVICE_ROLE });
+    descrizioneFonte = "Supabase (database vero)";
+    if (CHIAVE === "chiave-di-prova-solo-locale") {
+      console.log("⚠  ATTENZIONE: stai usando Supabase vero ma la CHIAVE è quella di prova.");
+      console.log("   L'impronta NON combacerà con quella salvata dall'app: imposta IUCARE_CF_SECRET");
+      console.log("   nel file .env con lo STESSO valore dell'app IUCARE.\n");
+    }
+  } else {
+    const profiliProva = JSON.parse(fs.readFileSync(PROFILI, "utf8"));
+    fonte = fonteProfiliFinta(profiliProva, CHIAVE);
+    descrizioneFonte = `finti (${profiliProva.length} profili di prova)`;
+  }
 
   console.log("Cartella esami:", cartella);
-  console.log("Profili IUCARE (finti):", profiliProva.length);
+  console.log("Fonte profili:", descrizioneFonte);
   console.log("Chiave impronta:", CHIAVE === "chiave-di-prova-solo-locale" ? "(di prova)" : "(da ambiente)", "\n");
 
   const esami = scansionaCartella(cartella);
@@ -61,7 +80,11 @@ async function main() {
     } else {
       esito = "abbinato";
       risultato.motivi = ["Abbinato per impronta del codice fiscale."];
-      const { giaPresente } = registraInAttesaLocale(profilo, pacchetto);
+      // Se siamo collegati a Supabase, scrive nella tabella vera; altrimenti nel file locale.
+      const { giaPresente } =
+        URL_SUPABASE && SERVICE_ROLE
+          ? await registraInAttesaSupabase(profilo, pacchetto, { url: URL_SUPABASE, serviceRoleKey: SERVICE_ROLE })
+          : registraInAttesaLocale(profilo, pacchetto);
       const mail = await inviaEmail(profilo);
       console.log("ABBINATO →", profilo.email, giaPresente ? "(esame già in attesa, non duplicato)" : "(registrato esame in attesa)");
       console.log("  Email", mail.simulata ? "SIMULATA" : "inviata", "a", mail.a, "— oggetto:", JSON.stringify(mail.oggetto));
@@ -74,7 +97,12 @@ async function main() {
   }
 
   console.log("\n✓ Log esiti:", fileDelGiorno());
-  console.log("✓ Esami in attesa:", path.join(__dirname, "..", "log", "esami-in-attesa.json"));
+  console.log(
+    "✓ Esami in attesa:",
+    URL_SUPABASE && SERVICE_ROLE
+      ? "tabella esami_in_attesa su Supabase"
+      : path.join(__dirname, "..", "log", "esami-in-attesa.json")
+  );
 }
 
 main().catch((e) => {
