@@ -8,6 +8,7 @@
 const fs = require("fs");
 const path = require("path");
 const { scansionaCartella } = require("./scansiona-cartella");
+const { preparaCartella } = require("./prepara-esame");
 const { costruisciPacchetto } = require("./costruisci-pacchetto");
 const { improntaCodiceFiscale } = require("./impronta");
 const { fonteProfiliFinta, fonteProfiliSupabase } = require("./fonte-profili");
@@ -52,7 +53,12 @@ async function main() {
   console.log("Fonte profili:", descrizioneFonte);
   console.log("Chiave impronta:", CHIAVE === "chiave-di-prova-solo-locale" ? "(di prova)" : "(da ambiente)", "\n");
 
-  const esami = scansionaCartella(cartella);
+  // Se la cartella contiene uno zip (il CD di JB), lo scompattiamo in una
+  // temporanea e scansioniamo quella. L'originale non viene mai toccata.
+  const preparata = preparaCartella(cartella);
+  if (preparata.cartella !== cartella) console.log("Zip scompattato in:", preparata.cartella);
+
+  const esami = scansionaCartella(preparata.cartella);
   console.log("Esami trovati:", esami.length, "\n");
 
   for (const grezzo of esami) {
@@ -103,6 +109,8 @@ async function main() {
       ? "tabella esami_in_attesa su Supabase"
       : path.join(__dirname, "..", "log", "esami-in-attesa.json")
   );
+
+  preparata.pulisci(); // rimuove la cartella temporanea dello zip, se creata
 }
 
 main().catch((e) => {

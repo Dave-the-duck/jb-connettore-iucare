@@ -8,6 +8,7 @@
     "prova": "node --env-file-if-exists=.env src/prova.js"
   },
   "dependencies": {
+    "adm-zip": "^0.5.18",
     "dicom-parser": "^1.8.21",
     "pdf-parse": "^1.1.1"
   }
