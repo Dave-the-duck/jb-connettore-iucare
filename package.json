@@ -5,7 +5,8 @@
   "description": "Connettore JB Medica -> IUCARE: legge gli esami (DICOM + referto PDF) dalla cartella del portale, li abbina ai pazienti iscritti a IUCARE e prepara il trasferimento nel Drive del paziente.",
   "type": "commonjs",
   "scripts": {
-    "prova": "node --env-file-if-exists=.env src/prova.js"
+    "prova": "node --env-file-if-exists=.env src/prova.js",
+    "server": "node --env-file-if-exists=.env src/server.js"
   },
   "dependencies": {
     "adm-zip": "^0.5.18",
