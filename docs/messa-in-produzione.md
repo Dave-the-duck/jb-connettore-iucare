@@ -67,6 +67,35 @@ Pezzi:
 2. **La macchina può navigare su internet in uscita (HTTPS)?** È l'unica cosa che
    serve lato rete: niente porte da aprire in entrata.
 
+## Checklist completa da dare all'IT (quando prepara la VM)
+
+**1. La macchina**
+- Ubuntu Server 24.04 LTS, senza desktop
+- 2 vCPU, 4 GB RAM, 20 GB disco
+
+**2. Accesso SSH**
+- indirizzo della macchina (IP interno va bene: si entra in VPN)
+- un utente con `sudo` + password (o chiave SSH)
+- conferma che sia raggiungibile in SSH dalla rete/VPN
+
+**3. Cartella degli esami (la parte più importante)**
+- la montano loro, in **sola lettura**
+- ci dicono il **percorso** dove la trovo (es. `/mnt/esami`)
+- conferma esplicita: **read-only** (il connettore non deve poter scrivere/cancellare)
+
+**4. Internet in uscita (per il tunnel)**
+- uscita confermata ✅
+- può uscire in **HTTPS (porta 443)** verso internet **senza proxy**? Se c'è un
+  proxy aziendale, basta saperlo e si configura `cloudflared`.
+
+**5. Dettaglio piccolo (di solito già ok)**
+- ora/data sincronizzata (**NTP** attivo): serve per certificati HTTPS e token.
+
+**Cosa NON serve chiedere:**
+- ❌ nessuna porta in entrata (niente 443 in ingresso)
+- ❌ nessun IP pubblico dedicato
+- ❌ nessun accesso a JB Online
+
 ## Dopo le risposte: cosa faremo (riassunto, i comandi arrivano poi)
 
 1. Collegarsi in SSH alla macchina.
