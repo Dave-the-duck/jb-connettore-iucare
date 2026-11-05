@@ -3,6 +3,14 @@
 Appunti per installare il connettore su una macchina dedicata in JB.
 Scritto in modo semplice: puoi lavorarci da qualsiasi PC.
 
+## Stato (aggiornato)
+
+- ✅ **Montaggio di rete**: fattibile (la cartella esami si monterà come una cartella
+  sulla macchina, in sola lettura).
+- ✅ **Uscita a internet**: confermata (la macchina naviga in uscita → tunnel ok).
+- ⏳ In attesa: consegna della macchina dall'IT con **SSH** e la **cartella esami
+  già montata in sola lettura** (ci serve il percorso, es. `/mnt/esami`).
+
 ## Idea generale
 
 - Il connettore gira su una **macchina Linux dedicata**, **separata** da JB Online
