@@ -33,26 +33,31 @@ Niente interfaccia grafica: si installa e si gestisce tutto da riga di comando (
    (NFS / SMB / FTP). Solo lettura: mai scrivere o cancellare lì dentro.
 2. **Uscita verso internet in HTTPS** — serve per validare l'utente su Supabase.
 
-## Pubblicazione su internet → `esami.iucare.it`
+## Pubblicazione su internet → `esami.iucare.it` (con tunnel)
 
-Due pezzi:
+Scelta fatta: **NON apriamo nessuna porta in entrata** (niente porta 443 in
+ingresso, niente IP pubblico). Usiamo un **tunnel** (**Cloudflare Tunnel**, gratis):
+è la macchina che chiama **fuori** e tiene aperto un canale; le richieste dei
+pazienti entrano da quel canale. Così:
 
-- **Lato server (IT di JB):** espongono la macchina su internet, con certificato
-  **Let's Encrypt** (gratis, automatico) oppure dietro un loro reverse-proxy.
-  Il connettore internamente gira sulla porta **8080**.
-- **Lato dominio (noi, su Aruba):** nel pannello Aruba creiamo un record DNS che fa
-  puntare `esami.iucare.it` all'**IP pubblico** che ci dà l'IT.
+- non serve aprire porte verso la rete di JB (l'IT è più tranquillo);
+- basta che la macchina abbia la **normale uscita a internet** (la stessa che le
+  serve già per Supabase);
+- `esami.iucare.it` funziona in HTTPS lo stesso.
 
-## Domande da fare al sistemista (le tre che ci sbloccano)
+Pezzi:
+
+- **Sulla macchina:** gira il connettore sulla porta interna **8080** e accanto
+  gira `cloudflared` (il programma del tunnel), che lo pubblica su `esami.iucare.it`.
+- **Dominio `iucare.it`:** va **gestito su Cloudflare** (gratis; resta comprato su
+  Aruba, si cambiano solo i *nameserver* nel pannello Aruba). Lo facciamo noi.
+
+## Domande da fare al sistemista (le due che ci sbloccano)
 
 1. **Come leggo la cartella degli esami?** Montaggio di rete in sola lettura
    (NFS/SMB) o FTP? (Serve il tipo per configurare la lettura.)
-2. **L'esposizione di `esami.iucare.it` la fate voi o la facciamo noi?**
-   - Se la fate voi: ditemi solo su quale porta/indirizzo interno deve girare il
-     connettore (useremo la **8080**).
-   - Se la facciamo noi: serve che la macchina abbia un **IP pubblico** e sia
-     raggiungibile da internet sulla porta **443**.
-3. **Qual è l'IP pubblico** della macchina? (serve per il DNS su Aruba)
+2. **La macchina può navigare su internet in uscita (HTTPS)?** È l'unica cosa che
+   serve lato rete: niente porte da aprire in entrata.
 
 ## Dopo le risposte: cosa faremo (riassunto, i comandi arrivano poi)
 
@@ -66,7 +71,9 @@ Due pezzi:
 5. Montare la cartella degli esami in **sola lettura**.
 6. Far partire il connettore come **servizio** (riparte da solo se la macchina si
    riavvia).
-7. Collegare `esami.iucare.it` (DNS su Aruba + HTTPS).
+7. Mettere `iucare.it` su **Cloudflare** (cambio nameserver su Aruba) e installare
+   **`cloudflared`** sulla macchina per pubblicare `esami.iucare.it` tramite tunnel
+   (anche lui come servizio).
 8. Nell'app (Vercel) impostare `NEXT_PUBLIC_CONNETTORE_URL = https://esami.iucare.it`
    e controllare la CSP.
 
